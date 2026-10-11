@@ -6,9 +6,9 @@
 
 - **Project:** Smart Assistive Glasses prototype
 - **Active phase:** Phase 1, video inspection and minimal OpenCV video-input pipeline
-- **Overall state:** Phase 1 input inspection verified; reusable source code is not yet implemented
+- **Overall state:** Phase 1 input inspection and reusable video-file source verified
 - **Last updated:** 2026-10-12
-- **Next permitted task:** Create one small reusable OpenCV video-file source module that yields frames with source timestamps. Do not implement any later-phase features.
+- **Next permitted task:** Add a small sample-frame verification/output step on top of the video source. Do not implement any later-phase features.
 
 ## Phase checklist
 
@@ -27,7 +27,8 @@
 - **OpenCV:** `cv2` imported successfully; reported version `5.0.0`.
 - **Video metadata:** OpenCV reported `29.97002997002997` FPS, `52,900` frames, `1920x1080` dimensions, and approximately `1,765.0967` seconds (`29.4183` minutes).
 - **Frame reading:** Frames 0, 26,450, and 52,899 decoded successfully. Each had shape `(1080, 1920, 3)`, and OpenCV reported source timestamps of 0 ms, 882,548.33 ms, and 1,765,063.3 ms respectively.
-- **Reusable pipeline:** Not implemented yet; the checks above used a focused in-memory OpenCV verification snippet only.
+- **Reusable pipeline:** `smart_assist.input.VideoFileSource` opens a video, exposes metadata, yields decoded frames with frame indices and OpenCV source timestamps, and releases resources through `close()` or a context manager.
+- **Tests:** `tests/test_video_source.py` verifies metadata/frame decoding against `video.mp4` and rejects an unreadable path.
 
 ## Decisions and constraints
 
@@ -56,6 +57,14 @@
 - **Decision:** Keep source timestamps from OpenCV for the reusable input module; do not substitute processing time. No later-phase feature work was started.
 - **Status:** Verified input inspection; reusable video-source implementation remains planned.
 - **Next step:** Implement only the small reusable video-file source module and test its frame/timestamp behavior.
+
+### 2026-10-12: Reusable video-file source implemented
+
+- **Change:** Added `VideoFileSource`, `Frame`, and `VideoMetadata` under `smart_assist/input/`. The source reads sequentially, preserves OpenCV source timestamps, exposes basic metadata, and supports deterministic resource cleanup.
+- **Tests:** `/home/rguktrkvalley/Pictures/Vision/venv/bin/python -m pytest -q tests/test_video_source.py` passed: `2 passed in 1.03s`. Pylance syntax checks found no errors in the source or test file. The VS Code test tool did not discover the file, so the direct project-environment pytest command is the authoritative test result.
+- **Decision:** Add only the file-based source now; live-camera support and all later processing features remain out of scope.
+- **Status:** Verified reusable video-file source and focused tests.
+- **Next step:** Add a small sample-frame verification/output step using this source, without adding detection or other later-phase features.
 
 
 I manually created .gitignore and also pip installed
