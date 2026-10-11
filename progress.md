@@ -61,6 +61,11 @@
 - **Status:** Verified input inspection; reusable video-source implementation remains planned.
 - **Next step:** Implement only the small reusable video-file source module and test its frame/timestamp behavior.
 
+### 2026-10-12: Manual setup of environment and dependencies
+I manually created .gitignore and also pip installed
+pip install opencv-python ultralytics google-genai pyttsx3 python-dotenv SpeechRecognition pytest
+and created pip freeze requirements.txt file. I also created a .env file to store the API key for Google Gemini.
+
 ### 2026-10-12: Reusable video-file source implemented
 
 - **Change:** Added `VideoFileSource`, `Frame`, and `VideoMetadata` under `smart_assist/input/`. The source reads sequentially, preserves OpenCV source timestamps, exposes basic metadata, and supports deterministic resource cleanup.
@@ -94,7 +99,11 @@
 - **Status:** Verified sampled annotation and structured logging. No alert rules, tracking, speech, Gemini, currency, or live-camera functionality was added.
 - **Next step:** Add bounded annotated video processing and performance measurement, then review whether Phase 2 is complete.
 
+### 2026-10-12: Phase 2 bounded annotated video verified
 
-I manually created .gitignore and also pip installed
-pip install opencv-python ultralytics google-genai pyttsx3 python-dotenv SpeechRecognition pytest
-and created pip freeze requirements.txt file. I also created a .env file to store the API key for Google Gemini.
+- **Change:** Added `smart_assist.detection.annotate_video`, which writes a bounded MP4 preview, draws YOLO annotations, preserves source timestamps in a JSON log, and records per-frame and summary inference timing.
+- **Tests:** `/home/rguktrkvalley/Pictures/Vision/venv/bin/python -m pytest -q tests/test_annotate_video.py` passed: `1 passed in 5.82s`.
+- **Verification command:** `/home/rguktrkvalley/Pictures/Vision/venv/bin/python -m smart_assist.detection.annotate_video video.mp4 outputs/phase2_preview.mp4 outputs/phase2_video_log.json --max-frames 5` processed 5 real frames successfully. Source FPS was 29.9700; average inference was 985.94 ms, minimum 310.49 ms, and maximum 3417.60 ms.
+- **Decision:** Keep video processing explicitly bounded with `--max-frames`; processing the complete 30-minute recording on this CPU is not silently started.
+- **Status:** Phase 2 checklist is verified for model loading, sampled inference, annotation, structured logging, and measured bounded video output. No alert rules, tracking, speech, Gemini, currency, or live-camera functionality was added.
+- **Next step:** Begin Phase 3 with a configurable central-region geometry helper and focused tests; do not add speech or alert cooldown behavior yet.
