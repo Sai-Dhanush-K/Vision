@@ -17,7 +17,7 @@ Do not silently invent requirements or treat an unverified assumption as a confi
 
 ## 3. The one-small-step rule
 
-**Never implement the whole project, an entire phase, or multiple future phases in one response or coding session.** Work on exactly one small, testable increment at a time.
+**Never implement the whole project, or multiple future phases in one response or coding session.** Work on exactly one small, testable increment at a time.
 
 A small increment should have one clear goal and a limited set of files. Prefer the smallest useful implementation over scaffolding a large architecture. Do not create all directories and modules from the proposed architecture up front. Create files only when the current step needs them.
 

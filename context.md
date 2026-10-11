@@ -238,7 +238,7 @@ Implement and verify one small increment at a time. Do not generate the whole ap
 
 ### Phase 1: Video pipeline
 
-- Open the 30-minute video using OpenCV.
+- Open the 30-minute video using OpenCV. video is names as video.mp4
 - Read frames and timestamps.
 - Confirm frame count, dimensions, and video FPS.
 - Save a short sample output or verify frames visually.
