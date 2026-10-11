@@ -6,15 +6,15 @@
 
 - **Project:** Smart Assistive Glasses prototype
 - **Active phase:** Phase 3, central-region threat rules
-- **Overall state:** Phase 1 and Phase 2 complete; Phase 3 central geometry and proximity filtering verified
+- **Overall state:** Phase 1 and Phase 2 complete; Phase 3 geometry, proximity filtering, and cooldown events verified
 - **Last updated:** 2026-10-12
-- **Next permitted task:** Add event-state/cooldown handling for repeated central threats. Do not add speech yet.
+- **Next permitted task:** Integrate threat candidates and event state into bounded video processing with structured alert events. Do not add speech yet.
 
 ## Phase checklist
 
 - [x] **Phase 1: Video pipeline.** Inspect video metadata, read frames and source timestamps, verify dimensions/FPS/frame count/duration as available, and confirm sampled frames can be viewed or saved. Keep the input design reusable without implementing live-camera support.
 - [ ] **Phase 2: Local YOLO detection.** Sampled inference, annotations, and structured logging verified; bounded annotated video processing remains.
-- [ ] **Phase 3: Central-region rules and basic alert events.** Central geometry and proximity filtering verified; event-state/cooldown and alert event emission remain.
+- [ ] **Phase 3: Central-region rules and basic alert events.** Geometry, proximity filtering, and cooldown event emission verified; bounded pipeline integration remains.
 - [ ] **Phase 4: Central speech manager and priority behavior.** Not started. Requires prior phases.
 - [ ] **Phase 5: Bounded, asynchronous Gemini scene analysis.** Not started. Requires prior phases.
 - [ ] **Phase 6: On-demand scene descriptions and voice input.** Not started. Requires prior phases.
@@ -33,6 +33,7 @@
 - **YOLO:** `smart_assist.detection.YoloDetector` loads the lightweight `yolov8n.pt` model, forces CPU inference, validates confidence configuration, and converts results into typed `Detection` records. Model weights remain local and ignored by Git.
 - **Annotated samples:** `smart_assist.detection.annotate_samples` writes bounding boxes, labels, confidences, source timestamps, inference durations, and structured detections for selected frames.
 - **Central threat rules:** `smart_assist.detection.spatial_rules` uses normalized configurable region bounds, relevant labels, minimum normalized box height, and minimum normalized box area. A detection must be relevant, centered, and large enough to pass both size thresholds.
+- **Threat events:** `ThreatEventState` suppresses repeated alerts for a continuously present class, emits again after a configurable source-time cooldown, and emits again immediately after that class disappears and returns.
 
 ## Decisions and constraints
 
@@ -117,3 +118,11 @@ and created pip freeze requirements.txt file. I also created a .env file to stor
 - **Decision:** Keep this layer independent from speech. It produces typed threat candidates; event cooldown and alert delivery are the next Phase 3 increment.
 - **Status:** Phase 3 central geometry and proximity filtering verified. No speech, tracking, Gemini, currency, or live-camera functionality was added.
 - **Next step:** Add event-state/cooldown handling for repeated central threats.
+
+### 2026-10-12: Phase 3 threat event cooldown verified
+
+- **Change:** Added `ThreatEventState` and `ThreatAlert` in `smart_assist.detection.threat_events`. Events are keyed by class label, use source timestamps, suppress continuous duplicates, re-alert after a configurable cooldown, and re-alert when a threat disappears and returns.
+- **Tests:** `/home/rguktrkvalley/Pictures/Vision/venv/bin/python -m pytest -q tests/test_threat_events.py tests/test_spatial_rules.py` passed: `11 passed in 3.76s`.
+- **Decision:** Keep event state independent from speech and tracking. The event layer emits structured messages such as `Person ahead.` but does not speak them.
+- **Status:** Phase 3 geometry, proximity filtering, and cooldown behavior verified. No speech, tracking, Gemini, currency, or live-camera functionality was added.
+- **Next step:** Integrate threat candidates and event state into bounded video processing with structured alert events.
