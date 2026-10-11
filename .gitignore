@@ -4,4 +4,5 @@
 __pycache__/
 *.py[cod]
 outputs/
+*.pt
 video.mp4

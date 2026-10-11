@@ -5,15 +5,15 @@
 ## Current status
 
 - **Project:** Smart Assistive Glasses prototype
-- **Active phase:** Phase 1, video inspection and minimal OpenCV video-input pipeline
-- **Overall state:** Phase 1 video pipeline verified and complete
+- **Active phase:** Phase 2, local YOLO detection
+- **Overall state:** Phase 1 complete; Phase 2 model loading and single-frame inference verified
 - **Last updated:** 2026-10-12
-- **Next permitted task:** Begin Phase 2 with one small CPU-only YOLO model-loading/inference increment. Do not implement alert rules or later phases.
+- **Next permitted task:** Add annotated output and structured detection logging for selected sample frames. Do not implement alert rules or later phases.
 
 ## Phase checklist
 
 - [x] **Phase 1: Video pipeline.** Inspect video metadata, read frames and source timestamps, verify dimensions/FPS/frame count/duration as available, and confirm sampled frames can be viewed or saved. Keep the input design reusable without implementing live-camera support.
-- [ ] **Phase 2: Local YOLO detection.** Not started. Requires Phase 1 verification.
+- [ ] **Phase 2: Local YOLO detection.** Model loading and single-frame inference verified; annotated output and structured logging remain.
 - [ ] **Phase 3: Central-region rules and basic alert events.** Not started. Requires prior phases.
 - [ ] **Phase 4: Central speech manager and priority behavior.** Not started. Requires prior phases.
 - [ ] **Phase 5: Bounded, asynchronous Gemini scene analysis.** Not started. Requires prior phases.
@@ -30,6 +30,7 @@
 - **Reusable pipeline:** `smart_assist.input.VideoFileSource` opens a video, exposes metadata, yields decoded frames with frame indices and OpenCV source timestamps, and releases resources through `close()` or a context manager.
 - **Seeking and samples:** `VideoFileSource.seek()` positions the next read by zero-based frame index. `smart_assist.input.sample_frames` saves resized representative JPEGs and a timestamp manifest without adding generated output to Git.
 - **Tests:** `tests/test_video_source.py` verifies metadata/frame decoding against `video.mp4` and rejects an unreadable path. `tests/test_sample_frames.py` verifies image and manifest output.
+- **YOLO:** `smart_assist.detection.YoloDetector` loads the lightweight `yolov8n.pt` model, forces CPU inference, validates confidence configuration, and converts results into typed `Detection` records. Model weights remain local and ignored by Git.
 
 ## Decisions and constraints
 
@@ -74,6 +75,14 @@
 - **Verification command:** `/home/rguktrkvalley/Pictures/Vision/venv/bin/python -m smart_assist.input.sample_frames video.mp4 outputs/phase1_samples --frame-index 0 --frame-index 26450 --frame-index 52899` completed successfully. The three JPEGs were opened and visually inspected; the manifest preserved timestamps 0.0 ms, 882,548.33 ms, and 1,765,063.3 ms.
 - **Status:** Phase 1 is verified and complete. No YOLO, Gemini, speech, voice, tracking, currency, or live-camera functionality was added.
 - **Next step:** Begin Phase 2 with one small CPU-only YOLO model-loading/inference increment.
+
+### 2026-10-12: Phase 2 YOLO inference verified
+
+- **Change:** Added `smart_assist.detection.YoloDetector` and `Detection`. The detector runs Ultralytics YOLOv8n on CPU for one image and returns class IDs, labels, confidences, and bounding-box coordinates. Added focused tests for real video-frame inference and invalid confidence configuration.
+- **Tests:** `/home/rguktrkvalley/Pictures/Vision/venv/bin/python -m pytest -q tests/test_yolo_detector.py` passed: `2 passed in 60.22s`. The combined regression command `/home/rguktrkvalley/Pictures/Vision/venv/bin/python -m pytest -q tests/test_video_source.py tests/test_sample_frames.py tests/test_yolo_detector.py` passed: `5 passed in 10.36s`. Pylance reported no syntax errors in the detector.
+- **Decision:** Use CPU explicitly and keep downloaded `*.pt` weights out of Git. This increment does not add alert rules, tracking, speech, or full-video inference.
+- **Status:** Verified Phase 2 model loading and single-frame inference.
+- **Next step:** Add annotated output and structured detection logging for selected sample frames.
 
 
 I manually created .gitignore and also pip installed
