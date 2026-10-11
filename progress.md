@@ -5,16 +5,16 @@
 ## Current status
 
 - **Project:** Smart Assistive Glasses prototype
-- **Active phase:** Phase 2, local YOLO detection
-- **Overall state:** Phase 1 complete; Phase 2 sampled inference, annotation, and logging verified
+- **Active phase:** Phase 3, central-region threat rules
+- **Overall state:** Phase 1 and Phase 2 complete; Phase 3 central geometry and proximity filtering verified
 - **Last updated:** 2026-10-12
-- **Next permitted task:** Add bounded annotated video processing and performance measurement, then review whether Phase 2 is complete. Do not implement alert rules or later phases.
+- **Next permitted task:** Add event-state/cooldown handling for repeated central threats. Do not add speech yet.
 
 ## Phase checklist
 
 - [x] **Phase 1: Video pipeline.** Inspect video metadata, read frames and source timestamps, verify dimensions/FPS/frame count/duration as available, and confirm sampled frames can be viewed or saved. Keep the input design reusable without implementing live-camera support.
 - [ ] **Phase 2: Local YOLO detection.** Sampled inference, annotations, and structured logging verified; bounded annotated video processing remains.
-- [ ] **Phase 3: Central-region rules and basic alert events.** Not started. Requires prior phases.
+- [ ] **Phase 3: Central-region rules and basic alert events.** Central geometry and proximity filtering verified; event-state/cooldown and alert event emission remain.
 - [ ] **Phase 4: Central speech manager and priority behavior.** Not started. Requires prior phases.
 - [ ] **Phase 5: Bounded, asynchronous Gemini scene analysis.** Not started. Requires prior phases.
 - [ ] **Phase 6: On-demand scene descriptions and voice input.** Not started. Requires prior phases.
@@ -32,6 +32,7 @@
 - **Tests:** `tests/test_video_source.py` verifies metadata/frame decoding against `video.mp4` and rejects an unreadable path. `tests/test_sample_frames.py` verifies image and manifest output.
 - **YOLO:** `smart_assist.detection.YoloDetector` loads the lightweight `yolov8n.pt` model, forces CPU inference, validates confidence configuration, and converts results into typed `Detection` records. Model weights remain local and ignored by Git.
 - **Annotated samples:** `smart_assist.detection.annotate_samples` writes bounding boxes, labels, confidences, source timestamps, inference durations, and structured detections for selected frames.
+- **Central threat rules:** `smart_assist.detection.spatial_rules` uses normalized configurable region bounds, relevant labels, minimum normalized box height, and minimum normalized box area. A detection must be relevant, centered, and large enough to pass both size thresholds.
 
 ## Decisions and constraints
 
@@ -107,3 +108,12 @@ and created pip freeze requirements.txt file. I also created a .env file to stor
 - **Decision:** Keep video processing explicitly bounded with `--max-frames`; processing the complete 30-minute recording on this CPU is not silently started.
 - **Status:** Phase 2 checklist is verified for model loading, sampled inference, annotation, structured logging, and measured bounded video output. No alert rules, tracking, speech, Gemini, currency, or live-camera functionality was added.
 - **Next step:** Begin Phase 3 with a configurable central-region geometry helper and focused tests; do not add speech or alert cooldown behavior yet.
+
+### 2026-10-12: Phase 3 central threat geometry verified
+
+- **Change:** Added `NormalizedRegion`, `ThreatRuleConfig`, `ThreatCandidate`, and `find_threats` in `smart_assist.detection.spatial_rules`. Human/vehicle labels are configurable, region bounds are normalized, and both box height and box area thresholds reject small distant detections even when centered.
+- **Tests:** `/home/rguktrkvalley/Pictures/Vision/venv/bin/python -m pytest -q tests/test_spatial_rules.py` passed: `6 passed in 3.47s`. The full Phase 1/2 regression suite remains covered by the prior `7 passed` result.
+- **Real-frame verification:** On frames 0, 26,450, and 52,899, the rules returned one large central `person` threat at frame 0, no threat for the detected car at frame 26,450 because it was outside/too small for the configured central proximity rule, and no threats at frame 52,899.
+- **Decision:** Keep this layer independent from speech. It produces typed threat candidates; event cooldown and alert delivery are the next Phase 3 increment.
+- **Status:** Phase 3 central geometry and proximity filtering verified. No speech, tracking, Gemini, currency, or live-camera functionality was added.
+- **Next step:** Add event-state/cooldown handling for repeated central threats.
