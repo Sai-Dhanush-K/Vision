@@ -82,6 +82,17 @@ class VideoFileSource:
         self._next_index += 1
         return frame
 
+    def seek(self, index: int) -> None:
+        """Position the next read at a zero-based frame index."""
+
+        if self._closed:
+            raise RuntimeError("Cannot seek a closed video source")
+        if index < 0:
+            raise ValueError("frame index must not be negative")
+        if not self._capture.set(cv2.CAP_PROP_POS_FRAMES, index):
+            raise ValueError(f"Could not seek to frame {index}")
+        self._next_index = index
+
     def close(self) -> None:
         """Release the OpenCV capture resource."""
 

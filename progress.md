@@ -6,13 +6,13 @@
 
 - **Project:** Smart Assistive Glasses prototype
 - **Active phase:** Phase 1, video inspection and minimal OpenCV video-input pipeline
-- **Overall state:** Phase 1 input inspection and reusable video-file source verified
+- **Overall state:** Phase 1 video pipeline verified and complete
 - **Last updated:** 2026-10-12
-- **Next permitted task:** Add a small sample-frame verification/output step on top of the video source. Do not implement any later-phase features.
+- **Next permitted task:** Begin Phase 2 with one small CPU-only YOLO model-loading/inference increment. Do not implement alert rules or later phases.
 
 ## Phase checklist
 
-- [ ] **Phase 1: Video pipeline.** Inspect video metadata, read frames and source timestamps, verify dimensions/FPS/frame count/duration as available, and confirm sampled frames can be viewed or saved. Keep the input design reusable without implementing live-camera support.
+- [x] **Phase 1: Video pipeline.** Inspect video metadata, read frames and source timestamps, verify dimensions/FPS/frame count/duration as available, and confirm sampled frames can be viewed or saved. Keep the input design reusable without implementing live-camera support.
 - [ ] **Phase 2: Local YOLO detection.** Not started. Requires Phase 1 verification.
 - [ ] **Phase 3: Central-region rules and basic alert events.** Not started. Requires prior phases.
 - [ ] **Phase 4: Central speech manager and priority behavior.** Not started. Requires prior phases.
@@ -28,7 +28,8 @@
 - **Video metadata:** OpenCV reported `29.97002997002997` FPS, `52,900` frames, `1920x1080` dimensions, and approximately `1,765.0967` seconds (`29.4183` minutes).
 - **Frame reading:** Frames 0, 26,450, and 52,899 decoded successfully. Each had shape `(1080, 1920, 3)`, and OpenCV reported source timestamps of 0 ms, 882,548.33 ms, and 1,765,063.3 ms respectively.
 - **Reusable pipeline:** `smart_assist.input.VideoFileSource` opens a video, exposes metadata, yields decoded frames with frame indices and OpenCV source timestamps, and releases resources through `close()` or a context manager.
-- **Tests:** `tests/test_video_source.py` verifies metadata/frame decoding against `video.mp4` and rejects an unreadable path.
+- **Seeking and samples:** `VideoFileSource.seek()` positions the next read by zero-based frame index. `smart_assist.input.sample_frames` saves resized representative JPEGs and a timestamp manifest without adding generated output to Git.
+- **Tests:** `tests/test_video_source.py` verifies metadata/frame decoding against `video.mp4` and rejects an unreadable path. `tests/test_sample_frames.py` verifies image and manifest output.
 
 ## Decisions and constraints
 
@@ -65,6 +66,14 @@
 - **Decision:** Add only the file-based source now; live-camera support and all later processing features remain out of scope.
 - **Status:** Verified reusable video-file source and focused tests.
 - **Next step:** Add a small sample-frame verification/output step using this source, without adding detection or other later-phase features.
+
+### 2026-10-12: Phase 1 sample output verified
+
+- **Change:** Added `smart_assist.input.sample_frames`, a small command-line utility that seeks to selected source frames, writes resized JPEG samples, and records frame indices and source timestamps in `manifest.json`. Generated files are ignored under `outputs/`.
+- **Tests:** `/home/rguktrkvalley/Pictures/Vision/venv/bin/python -m pytest -q tests/test_video_source.py tests/test_sample_frames.py` passed: `3 passed in 28.94s`.
+- **Verification command:** `/home/rguktrkvalley/Pictures/Vision/venv/bin/python -m smart_assist.input.sample_frames video.mp4 outputs/phase1_samples --frame-index 0 --frame-index 26450 --frame-index 52899` completed successfully. The three JPEGs were opened and visually inspected; the manifest preserved timestamps 0.0 ms, 882,548.33 ms, and 1,765,063.3 ms.
+- **Status:** Phase 1 is verified and complete. No YOLO, Gemini, speech, voice, tracking, currency, or live-camera functionality was added.
+- **Next step:** Begin Phase 2 with one small CPU-only YOLO model-loading/inference increment.
 
 
 I manually created .gitignore and also pip installed
