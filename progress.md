@@ -6,14 +6,14 @@
 
 - **Project:** Smart Assistive Glasses prototype
 - **Active phase:** Phase 2, local YOLO detection
-- **Overall state:** Phase 1 complete; Phase 2 model loading and single-frame inference verified
+- **Overall state:** Phase 1 complete; Phase 2 sampled inference, annotation, and logging verified
 - **Last updated:** 2026-10-12
-- **Next permitted task:** Add annotated output and structured detection logging for selected sample frames. Do not implement alert rules or later phases.
+- **Next permitted task:** Add bounded annotated video processing and performance measurement, then review whether Phase 2 is complete. Do not implement alert rules or later phases.
 
 ## Phase checklist
 
 - [x] **Phase 1: Video pipeline.** Inspect video metadata, read frames and source timestamps, verify dimensions/FPS/frame count/duration as available, and confirm sampled frames can be viewed or saved. Keep the input design reusable without implementing live-camera support.
-- [ ] **Phase 2: Local YOLO detection.** Model loading and single-frame inference verified; annotated output and structured logging remain.
+- [ ] **Phase 2: Local YOLO detection.** Sampled inference, annotations, and structured logging verified; bounded annotated video processing remains.
 - [ ] **Phase 3: Central-region rules and basic alert events.** Not started. Requires prior phases.
 - [ ] **Phase 4: Central speech manager and priority behavior.** Not started. Requires prior phases.
 - [ ] **Phase 5: Bounded, asynchronous Gemini scene analysis.** Not started. Requires prior phases.
@@ -31,6 +31,7 @@
 - **Seeking and samples:** `VideoFileSource.seek()` positions the next read by zero-based frame index. `smart_assist.input.sample_frames` saves resized representative JPEGs and a timestamp manifest without adding generated output to Git.
 - **Tests:** `tests/test_video_source.py` verifies metadata/frame decoding against `video.mp4` and rejects an unreadable path. `tests/test_sample_frames.py` verifies image and manifest output.
 - **YOLO:** `smart_assist.detection.YoloDetector` loads the lightweight `yolov8n.pt` model, forces CPU inference, validates confidence configuration, and converts results into typed `Detection` records. Model weights remain local and ignored by Git.
+- **Annotated samples:** `smart_assist.detection.annotate_samples` writes bounding boxes, labels, confidences, source timestamps, inference durations, and structured detections for selected frames.
 
 ## Decisions and constraints
 
@@ -83,6 +84,15 @@
 - **Decision:** Use CPU explicitly and keep downloaded `*.pt` weights out of Git. This increment does not add alert rules, tracking, speech, or full-video inference.
 - **Status:** Verified Phase 2 model loading and single-frame inference.
 - **Next step:** Add annotated output and structured detection logging for selected sample frames.
+
+### 2026-10-12: Phase 2 annotated samples and detection log verified
+
+- **Change:** Added `smart_assist.detection.annotate_samples`, which runs the CPU detector on selected source frames, draws bounding boxes/labels/confidences, and writes `detections.json` with source timestamps and inference timing. Added a focused test.
+- **Tests:** `/home/rguktrkvalley/Pictures/Vision/venv/bin/python -m pytest -q tests/test_annotate_samples.py` passed: `1 passed in 12.28s`.
+- **Verification command:** `/home/rguktrkvalley/Pictures/Vision/venv/bin/python -m smart_assist.detection.annotate_samples video.mp4 outputs/phase2_samples --frame-index 0 --frame-index 26450 --frame-index 52899` completed successfully. All three annotated images and the JSON log were opened/inspected.
+- **Observed performance:** Inference took approximately 4,275 ms, 317 ms, and 542 ms for the start, midpoint, and final 1920x1080 frames respectively on CPU. The first run includes model/runtime warm-up and is not treated as steady-state FPS.
+- **Status:** Verified sampled annotation and structured logging. No alert rules, tracking, speech, Gemini, currency, or live-camera functionality was added.
+- **Next step:** Add bounded annotated video processing and performance measurement, then review whether Phase 2 is complete.
 
 
 I manually created .gitignore and also pip installed
