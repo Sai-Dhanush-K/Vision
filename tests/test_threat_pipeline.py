@@ -62,6 +62,22 @@ def test_duplicate_candidates_same_class_emit_one_alert() -> None:
     assert len(pipeline.process_frame(image, 1_000)) == 1
 
 
+def test_two_distinct_people_emit_two_alerts() -> None:
+    detector = SequenceDetector(
+        [[
+            person_box(700, 200, 950, 1000),
+            person_box(1000, 200, 1250, 1000),
+        ]]
+    )
+    pipeline = ThreatPipeline(detector=detector)
+    image = np.zeros((1080, 1920, 3), dtype=np.uint8)
+
+    alerts = pipeline.process_frame(image, 1_000)
+
+    assert len(alerts) == 2
+    assert {alert.candidate.detection.track_id for alert in alerts} == {1, 2}
+
+
 def test_custom_middle_region_is_used_and_alert_log_is_serializable(
     tmp_path: Path,
 ) -> None:

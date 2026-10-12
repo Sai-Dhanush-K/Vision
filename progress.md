@@ -6,9 +6,9 @@
 
 - **Project:** Smart Assistive Glasses prototype
 - **Active phase:** Phase 3 output verification
-- **Overall state:** Phase 1, Phase 2, and Phase 3 logic plus terminal sampled monitoring verified
+- **Overall state:** Phase 1, Phase 2, and Phase 3 logic plus tracked terminal monitoring verified
 - **Last updated:** 2026-10-12
-- **Next permitted task:** User may run the sampled terminal monitor over the complete video; then proceed to Phase 4 speech-manager work.
+- **Next permitted task:** User may run the sampled terminal monitor with `--display` or over the complete video; then proceed to Phase 4 speech-manager work.
 
 ## Phase checklist
 
@@ -36,6 +36,8 @@
 - **Threat events:** `ThreatEventState` suppresses repeated alerts for a continuously present class, emits again after a configurable source-time cooldown, and emits again immediately after that class disappears and returns.
 - **Threat pipeline:** `ThreatPipeline` composes YOLO detection, normalized central/proximity filtering, and source-time event cooldown. `write_alert_log` serializes structured alert events without model objects.
 - **Terminal monitoring:** `smart_assist.detection.preview_player` samples source frames at a configurable rate (default 2 FPS) and prints frame index, source time, currently qualifying central threats, newly cooldown-eligible alerts, and processing time immediately after each inference. It no longer requires an OpenCV GUI.
+- **Tracking:** `IoUTracker` assigns stable IDs to same-class overlapping detections. Cooldown state is keyed by track ID, so a distinct person can alert independently while duplicate boxes for one person do not create duplicate alerts.
+- **Current default geometry:** The central strip is the middle 20% of the frame (`x=0.40..0.60`), only the lower half is eligible (`y=0.50..1.00`), and a person must be at least 10% of the frame width (half of the strip width), at least 15% of frame height, and at least 2% of frame area. Default relevant class is `person`; other classes can be configured.
 
 ## Decisions and constraints
 
@@ -155,3 +157,13 @@ and created pip freeze requirements.txt file. I also created a .env file to stor
 - **Real-video verification:** `/home/rguktrkvalley/Pictures/Vision/venv/bin/python -m smart_assist.detection.preview_player video.mp4 --sample-fps 2 --max-frames 3` printed frames 0, 15, and 30. It reported `person` threats on all three; emitted `Person ahead.` only at 0.00s and `new_alerts=none` at 0.50s and 1.00s, confirming cooldown suppression.
 - **Status:** Phase 3 terminal output is verified. No speech, tracking, Gemini, currency, or live-camera functionality was added.
 - **Next step:** User may run the sampled terminal monitor over the complete video; then proceed to Phase 4 speech-manager work.
+
+### 2026-10-12: Phase 3 tracking and stricter threat geometry verified
+
+- **Change:** Added `IoUTracker` and track IDs on detections. Cooldown is now per tracked person rather than per class. Duplicate overlapping boxes share a track; distinct non-overlapping people receive distinct IDs and can emit separate alerts.
+- **Geometry decision:** Default threat area is the central 20% vertical strip, lower half only. A person must occupy at least half the strip width (`10%` of full frame width) plus the existing height and area thresholds. Default relevant class is now `person`; vehicles remain configurable through `ThreatRuleConfig`.
+- **Live display:** Added optional `--display`. The monitor decodes sequentially for live playback, runs inference at the selected source sample rate, overlays the latest detections/threats, and prints sampled results in the terminal. Without `--display`, it seeks directly to sampled frames for lower I/O.
+- **Tests:** Updated geometry/pipeline tests and added distinct-person coverage. `/home/rguktrkvalley/Pictures/Vision/venv/bin/python -m pytest -q tests/test_spatial_rules.py tests/test_tracker.py tests/test_threat_events.py tests/test_threat_pipeline.py tests/test_preview_player.py` passed: `20 passed in 3.07s`.
+- **Real-video verification:** `/home/rguktrkvalley/Pictures/Vision/venv/bin/python -m smart_assist.detection.preview_player video.mp4 --sample-fps 2 --max-frames 3` processed frames 0, 15, and 30 with the stricter defaults and correctly emitted no threats for those samples. GUI display was not independently verified in this environment.
+- **Status:** Tracking and stricter terminal threat logic are verified; live GUI display remains environment-dependent because OpenCV Qt could not open reliably.
+- **Next step:** User may run the monitor with `--display`, then proceed to Phase 4 speech-manager work.

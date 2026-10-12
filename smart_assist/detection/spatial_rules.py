@@ -10,10 +10,10 @@ from .yolo_detector import Detection
 class NormalizedRegion:
     """A rectangular region expressed as fractions of image width and height."""
 
-    left: float = 0.30
-    top: float = 0.25
-    right: float = 0.70
-    bottom: float = 0.85
+    left: float = 0.40
+    top: float = 0.50
+    right: float = 0.60
+    bottom: float = 1.0
 
     def __post_init__(self) -> None:
         if not 0.0 <= self.left < self.right <= 1.0:
@@ -32,11 +32,14 @@ class ThreatRuleConfig:
     """Thresholds controlling when a relevant detection becomes a threat."""
 
     region: NormalizedRegion = field(default_factory=NormalizedRegion)
-    relevant_labels: frozenset[str] = frozenset({"person", "car", "bus", "truck", "motorcycle"})
+    relevant_labels: frozenset[str] = frozenset({"person"})
+    min_width_ratio: float = 0.10
     min_height_ratio: float = 0.15
     min_area_ratio: float = 0.02
 
     def __post_init__(self) -> None:
+        if not 0.0 < self.min_width_ratio <= 1.0:
+            raise ValueError("min_width_ratio must be greater than 0 and at most 1")
         if not 0.0 < self.min_height_ratio <= 1.0:
             raise ValueError("min_height_ratio must be greater than 0 and at most 1")
         if not 0.0 < self.min_area_ratio <= 1.0:
@@ -87,9 +90,12 @@ def find_threats(
         center_x = (detection.x1 + detection.x2) / 2 / image_width
         center_y = (detection.y1 + detection.y2) / 2 / image_height
         height_ratio = height / image_height
+        width_ratio = width / image_width
         area_ratio = width * height / (image_width * image_height)
 
         if not config.region.contains(center_x, center_y):
+            continue
+        if width_ratio < config.min_width_ratio:
             continue
         if height_ratio < config.min_height_ratio:
             continue

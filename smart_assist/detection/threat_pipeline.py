@@ -10,6 +10,7 @@ import numpy as np
 from ..input import VideoFileSource
 from .spatial_rules import ThreatRuleConfig, find_threats
 from .threat_events import ThreatAlert, ThreatEventState
+from .tracker import IoUTracker
 from .yolo_detector import YoloDetector
 
 
@@ -21,10 +22,12 @@ class ThreatPipeline:
         detector: Any | None = None,
         rules: ThreatRuleConfig | None = None,
         cooldown_ms: float = 5_000.0,
+        tracker: IoUTracker | None = None,
     ) -> None:
         self.detector = detector or YoloDetector()
         self.rules = rules or ThreatRuleConfig()
         self.event_state = ThreatEventState(cooldown_ms=cooldown_ms)
+        self.tracker = tracker or IoUTracker(max_gap_ms=10_000.0)
 
     def process_frame(
         self,
@@ -34,6 +37,7 @@ class ThreatPipeline:
         """Process one frame using its source timestamp."""
 
         detections = self.detector.detect(image)
+        detections = self.tracker.update(detections, timestamp_ms)
         candidates = find_threats(
             detections,
             image_width=image.shape[1],

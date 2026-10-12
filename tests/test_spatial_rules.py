@@ -34,6 +34,19 @@ def test_small_far_person_in_center_is_not_a_threat() -> None:
     assert threats == []
 
 
+def test_default_rule_requires_person_to_fill_half_center_strip_and_bottom_half() -> None:
+    assert find_threats(
+        [detection("person", 900, 550, 1100, 900)],
+        image_width=1920,
+        image_height=1080,
+    )
+    assert find_threats(
+        [detection("person", 900, 100, 1100, 500)],
+        image_width=1920,
+        image_height=1080,
+    ) == []
+
+
 def test_large_detection_outside_center_is_not_a_threat() -> None:
     threats = find_threats(
         [detection("car", 50, 400, 700, 1000)],

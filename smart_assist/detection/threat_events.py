@@ -22,8 +22,8 @@ class ThreatEventState:
         if cooldown_ms < 0:
             raise ValueError("cooldown_ms must not be negative")
         self.cooldown_ms = cooldown_ms
-        self._last_alert_ms: dict[str, float] = {}
-        self._active_labels: set[str] = set()
+        self._last_alert_ms: dict[int | str, float] = {}
+        self._active_keys: set[int | str] = set()
 
     def update(
         self,
@@ -35,17 +35,21 @@ class ThreatEventState:
         if timestamp_ms < 0:
             raise ValueError("timestamp_ms must not be negative")
 
-        current_labels = {candidate.detection.label for candidate in candidates}
-        self._active_labels.intersection_update(current_labels)
+        current_keys = {
+            candidate.detection.track_id or candidate.detection.label
+            for candidate in candidates
+        }
+        self._active_keys.intersection_update(current_keys)
         alerts: list[ThreatAlert] = []
-        emitted_labels: set[str] = set()
+        emitted_keys: set[int | str] = set()
 
         for candidate in candidates:
             label = candidate.detection.label
-            if label in emitted_labels:
+            key = candidate.detection.track_id or label
+            if key in emitted_keys:
                 continue
-            last_alert_ms = self._last_alert_ms.get(label)
-            is_new = label not in self._active_labels
+            last_alert_ms = self._last_alert_ms.get(key)
+            is_new = key not in self._active_keys
             cooldown_elapsed = (
                 last_alert_ms is None
                 or timestamp_ms - last_alert_ms >= self.cooldown_ms
@@ -59,8 +63,8 @@ class ThreatEventState:
                         timestamp_ms=timestamp_ms,
                     )
                 )
-                self._last_alert_ms[label] = timestamp_ms
-                emitted_labels.add(label)
+                self._last_alert_ms[key] = timestamp_ms
+                emitted_keys.add(key)
 
-        self._active_labels.update(current_labels)
+        self._active_keys.update(current_keys)
         return alerts
