@@ -74,6 +74,16 @@ def monitor_video(
     processed = 0
 
     with VideoFileSource(video_path) as source:
+        if display:
+            cv2.namedWindow(
+                "Smart Assistive Glasses - Threat Monitor",
+                cv2.WINDOW_NORMAL,
+            )
+            cv2.resizeWindow(
+                "Smart Assistive Glasses - Threat Monitor",
+                960,
+                540,
+            )
         frame_step = source.metadata.fps / sample_fps
         next_index = 0.0
         last_detections = []
@@ -102,7 +112,7 @@ def monitor_video(
                 processed += 1
                 elapsed_ms = (time.perf_counter() - started) * 1000
                 current = ", ".join(
-                    f"{candidate.detection.label}#{candidate.detection.track_id}"
+                    f"{candidate.alert_label}#{candidate.detection.track_id}"
                     for candidate in candidates
                 ) or "none"
                 new_alerts = ", ".join(alert.message for alert in alerts) or "none"
@@ -116,7 +126,7 @@ def monitor_video(
                 )
                 last_detections = detections
                 last_messages = [
-                    f"{candidate.detection.label.title()} ahead."
+                    f"{candidate.alert_label.title()} ahead."
                     for candidate in candidates
                 ]
                 next_index += frame_step

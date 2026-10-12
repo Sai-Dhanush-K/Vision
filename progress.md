@@ -6,7 +6,7 @@
 
 - **Project:** Smart Assistive Glasses prototype
 - **Active phase:** Phase 3 output verification
-- **Overall state:** Phase 1, Phase 2, and Phase 3 logic plus tracked terminal monitoring verified
+- **Overall state:** Phase 1, Phase 2, and Phase 3 logic plus tracked person/vehicle/obstacle monitoring verified
 - **Last updated:** 2026-10-12
 - **Next permitted task:** User may run the sampled terminal monitor with `--display` or over the complete video; then proceed to Phase 4 speech-manager work.
 
@@ -38,6 +38,8 @@
 - **Terminal monitoring:** `smart_assist.detection.preview_player` samples source frames at a configurable rate (default 2 FPS) and prints frame index, source time, currently qualifying central threats, newly cooldown-eligible alerts, and processing time immediately after each inference. It no longer requires an OpenCV GUI.
 - **Tracking:** `IoUTracker` assigns stable IDs to same-class overlapping detections. Cooldown state is keyed by track ID, so a distinct person can alert independently while duplicate boxes for one person do not create duplicate alerts.
 - **Current default geometry:** The central strip is the middle 20% of the frame (`x=0.40..0.60`), only the lower half is eligible (`y=0.50..1.00`), and a person must be at least 10% of the frame width (half of the strip width), at least 15% of frame height, and at least 2% of frame area. Default relevant class is `person`; other classes can be configured.
+- **Threat categories:** Qualifying `person` detections produce `Person ahead.`; configured vehicle labels (`car`, `bus`, `truck`, `motorcycle`, `bicycle`) produce `Vehicle ahead.`; any other detected object that passes the same central/lower/size rules produces `Obstacle ahead.`.
+- **Display size:** The optional OpenCV display uses a resizable `960x540` window so the full video frame fits on screen.
 
 ## Decisions and constraints
 
@@ -167,3 +169,12 @@ and created pip freeze requirements.txt file. I also created a .env file to stor
 - **Real-video verification:** `/home/rguktrkvalley/Pictures/Vision/venv/bin/python -m smart_assist.detection.preview_player video.mp4 --sample-fps 2 --max-frames 3` processed frames 0, 15, and 30 with the stricter defaults and correctly emitted no threats for those samples. GUI display was not independently verified in this environment.
 - **Status:** Tracking and stricter terminal threat logic are verified; live GUI display remains environment-dependent because OpenCV Qt could not open reliably.
 - **Next step:** User may run the monitor with `--display`, then proceed to Phase 4 speech-manager work.
+
+### 2026-10-12: Phase 3 vehicle, obstacle, and display refinement verified
+
+- **Change:** Extended central threat categorization to vehicles and generic obstacles. Cars, buses, trucks, motorcycles, and bicycles become `Vehicle ahead.`; any other detected object that passes the same lower-center and size rules becomes `Obstacle ahead.` The optional display now creates a resizable `960x540` window.
+- **Tests:** `/home/rguktrkvalley/Pictures/Vision/venv/bin/python -m pytest -q tests/test_video_source.py tests/test_sample_frames.py tests/test_yolo_detector.py tests/test_annotate_samples.py tests/test_annotate_video.py tests/test_spatial_rules.py tests/test_tracker.py tests/test_threat_events.py tests/test_threat_pipeline.py tests/test_preview_player.py` passed: `29 passed in 40.17s`.
+- **Real-video verification:** The 2 FPS terminal monitor processed three real frames successfully with the updated rules. No qualifying threats occurred in those first three samples; categorization and display behavior are covered by deterministic tests.
+- **Run command:** `/home/rguktrkvalley/Pictures/Vision/venv/bin/python -m smart_assist.detection.preview_player video.mp4 --sample-fps 2 --max-frames 20 --display`.
+- **Status:** Phase 3 is complete with person, vehicle, and obstacle categories, per-track cooldown, terminal output, and optional resized display. No speech, Gemini, currency, or live-camera functionality was added.
+- **Next step:** Proceed to Phase 4 central speech-manager work.

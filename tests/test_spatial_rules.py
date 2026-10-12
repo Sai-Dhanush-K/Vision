@@ -57,14 +57,26 @@ def test_large_detection_outside_center_is_not_a_threat() -> None:
     assert threats == []
 
 
-def test_irrelevant_label_is_ignored() -> None:
+def test_large_unknown_object_is_reported_as_obstacle() -> None:
     threats = find_threats(
         [detection("handbag", 700, 400, 1200, 1000)],
         image_width=1920,
         image_height=1080,
     )
 
-    assert threats == []
+    assert len(threats) == 1
+    assert threats[0].alert_label == "obstacle"
+
+
+def test_vehicle_is_reported_as_vehicle() -> None:
+    threats = find_threats(
+        [detection("car", 900, 550, 1100, 1000)],
+        image_width=1920,
+        image_height=1080,
+    )
+
+    assert len(threats) == 1
+    assert threats[0].alert_label == "vehicle"
 
 
 def test_geometry_and_thresholds_are_customizable() -> None:

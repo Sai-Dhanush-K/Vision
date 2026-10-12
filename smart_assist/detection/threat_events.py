@@ -44,7 +44,7 @@ class ThreatEventState:
         emitted_keys: set[int | str] = set()
 
         for candidate in candidates:
-            label = candidate.detection.label
+            label = candidate.alert_label
             key = candidate.detection.track_id or label
             if key in emitted_keys:
                 continue

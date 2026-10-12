@@ -32,7 +32,13 @@ class ThreatRuleConfig:
     """Thresholds controlling when a relevant detection becomes a threat."""
 
     region: NormalizedRegion = field(default_factory=NormalizedRegion)
-    relevant_labels: frozenset[str] = frozenset({"person"})
+    relevant_labels: frozenset[str] = frozenset(
+        {"person", "car", "bus", "truck", "motorcycle", "bicycle"}
+    )
+    vehicle_labels: frozenset[str] = frozenset(
+        {"car", "bus", "truck", "motorcycle", "bicycle"}
+    )
+    include_obstacles: bool = True
     min_width_ratio: float = 0.10
     min_height_ratio: float = 0.15
     min_area_ratio: float = 0.02
@@ -53,6 +59,7 @@ class ThreatCandidate:
     """A detection that passes the configured central-region threat rules."""
 
     detection: Detection
+    alert_label: str
     center_x_ratio: float
     center_y_ratio: float
     height_ratio: float
@@ -68,7 +75,7 @@ def find_threats(
     """Return relevant, central, sufficiently large detections.
 
     A detection must satisfy all three conditions:
-    1. Its class is configured as relevant.
+    1. Its class is configured as relevant or is treated as an obstacle.
     2. Its bounding-box center is inside the central region.
     3. Its normalized height and area both meet the proximity thresholds.
 
@@ -82,7 +89,13 @@ def find_threats(
     threats: list[ThreatCandidate] = []
 
     for detection in detections:
-        if detection.label not in config.relevant_labels:
+        if detection.label in config.relevant_labels:
+            alert_label = (
+                "vehicle" if detection.label in config.vehicle_labels else "person"
+            )
+        elif config.include_obstacles:
+            alert_label = "obstacle"
+        else:
             continue
 
         width = max(0.0, detection.x2 - detection.x1)
@@ -105,6 +118,7 @@ def find_threats(
         threats.append(
             ThreatCandidate(
                 detection=detection,
+                alert_label=alert_label,
                 center_x_ratio=center_x,
                 center_y_ratio=center_y,
                 height_ratio=height_ratio,

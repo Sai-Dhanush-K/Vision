@@ -8,6 +8,7 @@ from smart_assist.detection.yolo_detector import Detection
 def candidate(label: str = "person") -> ThreatCandidate:
     return ThreatCandidate(
         detection=Detection(0, label, 0.9, 700, 400, 1200, 1000),
+        alert_label="person" if label == "person" else "vehicle",
         center_x_ratio=0.5,
         center_y_ratio=0.65,
         height_ratio=0.55,
@@ -48,7 +49,7 @@ def test_different_labels_have_independent_state() -> None:
 
     alerts = state.update([candidate("car")], timestamp_ms=2_000)
 
-    assert [alert.label for alert in alerts] == ["car"]
+    assert [alert.label for alert in alerts] == ["vehicle"]
 
 
 def test_negative_timestamp_and_cooldown_are_rejected() -> None:
