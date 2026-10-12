@@ -5,10 +5,10 @@
 ## Current status
 
 - **Project:** Smart Assistive Glasses prototype
-- **Active phase:** Phase 4, central speech manager
-- **Overall state:** Phase 1, Phase 2, and Phase 3 complete; central threat events are integrated and verified
+- **Active phase:** Phase 3 output verification
+- **Overall state:** Phase 1, Phase 2, and Phase 3 logic plus terminal sampled monitoring verified
 - **Last updated:** 2026-10-12
-- **Next permitted task:** Design and implement one small central speech-manager increment that can receive structured alert events. Preserve urgent-alert priority and do not add Gemini yet.
+- **Next permitted task:** User may run the sampled terminal monitor over the complete video; then proceed to Phase 4 speech-manager work.
 
 ## Phase checklist
 
@@ -35,6 +35,7 @@
 - **Central threat rules:** `smart_assist.detection.spatial_rules` uses normalized configurable region bounds, relevant labels, minimum normalized box height, and minimum normalized box area. A detection must be relevant, centered, and large enough to pass both size thresholds.
 - **Threat events:** `ThreatEventState` suppresses repeated alerts for a continuously present class, emits again after a configurable source-time cooldown, and emits again immediately after that class disappears and returns.
 - **Threat pipeline:** `ThreatPipeline` composes YOLO detection, normalized central/proximity filtering, and source-time event cooldown. `write_alert_log` serializes structured alert events without model objects.
+- **Terminal monitoring:** `smart_assist.detection.preview_player` samples source frames at a configurable rate (default 2 FPS) and prints frame index, source time, currently qualifying central threats, newly cooldown-eligible alerts, and processing time immediately after each inference. It no longer requires an OpenCV GUI.
 
 ## Decisions and constraints
 
@@ -136,3 +137,21 @@ and created pip freeze requirements.txt file. I also created a .env file to stor
 - **Decision:** A threat event requires all of: configured relevant label, bounding-box center inside the normalized middle region, minimum height ratio, minimum area ratio, and either a new/reappeared threat or an elapsed source-time cooldown. Processing time is not used for cooldown decisions.
 - **Status:** Phase 3 is complete and verified. No speech, tracking, Gemini, currency, or live-camera functionality was added.
 - **Next step:** Design and implement one small central speech-manager increment that can receive structured alert events. Preserve urgent-alert priority and do not add Gemini yet.
+
+### 2026-10-12: Phase 3 visual preview implemented
+
+- **Change:** Added `smart_assist.detection.preview_player`, which displays the video with a green normalized central-region rectangle, YOLO boxes, and persistent red `THREAT: ...` text while a qualifying person or vehicle is currently inside the region and size thresholds. Cooldown still controls event emission; the overlay remains visible during the continuous threat.
+- **Tests:** `/home/rguktrkvalley/Pictures/Vision/venv/bin/python -m pytest -q tests/test_preview_player.py tests/test_threat_pipeline.py tests/test_threat_events.py tests/test_spatial_rules.py` passed: `16 passed in 2.93s`. The CLI help command and Pylance syntax check also passed.
+- **User verification pending:** A GUI preview was not launched in this environment because visual window interaction must be confirmed by the user. Do not treat the full-video visual behavior as user-verified yet.
+- **Run command:** `/home/rguktrkvalley/Pictures/Vision/venv/bin/python -m smart_assist.detection.preview_player video.mp4` runs a 300-frame preview. Add `--full-video` to process until the 30-minute video ends. Press `q` or `Esc` to stop.
+- **Status:** Phase 3 logic remains verified; visual full-video preview is implemented but awaits user confirmation. No speech, tracking, Gemini, currency, or live-camera functionality was added.
+- **Next step:** User should run the preview player and confirm the overlay, then proceed to Phase 4 speech-manager work.
+
+### 2026-10-12: Phase 3 terminal sampled monitoring verified
+
+- **Change:** Changed the default Phase 3 monitor from GUI playback to terminal output. It samples approximately 2 source frames per second by seeking source positions, processes only those frames, and prints threat status immediately. `--full-video` processes the entire recording at the selected sample rate; bounded runs remain the default.
+- **User-reported issue addressed:** The OpenCV window did not open reliably and 300 full-rate frames took 92.3 seconds. The GUI is no longer required for threat verification, and the monitor does not scan every source frame.
+- **Tests:** `/home/rguktrkvalley/Pictures/Vision/venv/bin/python -m pytest -q tests/test_preview_player.py tests/test_threat_pipeline.py tests/test_threat_events.py tests/test_spatial_rules.py` passed: `17 passed in 11.53s`.
+- **Real-video verification:** `/home/rguktrkvalley/Pictures/Vision/venv/bin/python -m smart_assist.detection.preview_player video.mp4 --sample-fps 2 --max-frames 3` printed frames 0, 15, and 30. It reported `person` threats on all three; emitted `Person ahead.` only at 0.00s and `new_alerts=none` at 0.50s and 1.00s, confirming cooldown suppression.
+- **Status:** Phase 3 terminal output is verified. No speech, tracking, Gemini, currency, or live-camera functionality was added.
+- **Next step:** User may run the sampled terminal monitor over the complete video; then proceed to Phase 4 speech-manager work.
