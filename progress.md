@@ -178,3 +178,14 @@ and created pip freeze requirements.txt file. I also created a .env file to stor
 - **Run command:** `/home/rguktrkvalley/Pictures/Vision/venv/bin/python -m smart_assist.detection.preview_player video.mp4 --sample-fps 2 --max-frames 20 --display`.
 - **Status:** Phase 3 is complete with person, vehicle, and obstacle categories, per-track cooldown, terminal output, and optional resized display. No speech, Gemini, currency, or live-camera functionality was added.
 - **Next step:** Proceed to Phase 4 central speech-manager work.
+
+## Phase 4 speech manager increment
+
+- **Verified:** Added `SpeechManager` with one serialized worker, priority ordering, duplicate-key suppression, and interruption of active speech for `CRITICAL` requests.
+- **Verified:** Added a `Speaker` protocol and lazy `Pyttsx3Speaker` adapter so local audio remains replaceable and future Gemini messages can use the same structured request path.
+- **Verified:** Added fake-speaker tests covering interruption, duplicate suppression, invalid input, and closed-manager behavior.
+- **Tested:** `/home/rguktrkvalley/Pictures/Vision/venv/bin/python -m pytest -q tests/test_speech_manager.py` — 3 passed.
+- **Reported:** `commands.md` remains an untracked user file; it was inspected and not modified.
+- **Tested:** `/home/rguktrkvalley/Pictures/Vision/venv/bin/python -m pytest -q` — 32 passed.
+- **Tested:** `git diff --check` and `py_compile` for the new speech module and tests — passed.
+- **Next step:** Integrate the speech manager into the Phase 3 preview so terminal, video, and audible local alerts run together; actual audio hardware behavior remains unverified.
