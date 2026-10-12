@@ -38,9 +38,12 @@ class ThreatEventState:
         current_labels = {candidate.detection.label for candidate in candidates}
         self._active_labels.intersection_update(current_labels)
         alerts: list[ThreatAlert] = []
+        emitted_labels: set[str] = set()
 
         for candidate in candidates:
             label = candidate.detection.label
+            if label in emitted_labels:
+                continue
             last_alert_ms = self._last_alert_ms.get(label)
             is_new = label not in self._active_labels
             cooldown_elapsed = (
@@ -57,6 +60,7 @@ class ThreatEventState:
                     )
                 )
                 self._last_alert_ms[label] = timestamp_ms
+                emitted_labels.add(label)
 
         self._active_labels.update(current_labels)
         return alerts

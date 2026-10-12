@@ -5,16 +5,16 @@
 ## Current status
 
 - **Project:** Smart Assistive Glasses prototype
-- **Active phase:** Phase 3, central-region threat rules
-- **Overall state:** Phase 1 and Phase 2 complete; Phase 3 geometry, proximity filtering, and cooldown events verified
+- **Active phase:** Phase 4, central speech manager
+- **Overall state:** Phase 1, Phase 2, and Phase 3 complete; central threat events are integrated and verified
 - **Last updated:** 2026-10-12
-- **Next permitted task:** Integrate threat candidates and event state into bounded video processing with structured alert events. Do not add speech yet.
+- **Next permitted task:** Design and implement one small central speech-manager increment that can receive structured alert events. Preserve urgent-alert priority and do not add Gemini yet.
 
 ## Phase checklist
 
 - [x] **Phase 1: Video pipeline.** Inspect video metadata, read frames and source timestamps, verify dimensions/FPS/frame count/duration as available, and confirm sampled frames can be viewed or saved. Keep the input design reusable without implementing live-camera support.
-- [ ] **Phase 2: Local YOLO detection.** Sampled inference, annotations, and structured logging verified; bounded annotated video processing remains.
-- [ ] **Phase 3: Central-region rules and basic alert events.** Geometry, proximity filtering, and cooldown event emission verified; bounded pipeline integration remains.
+- [x] **Phase 2: Local YOLO detection.** Lightweight CPU model loading, sampled inference, annotations, structured logging, bounded annotated video output, and measured performance verified.
+- [x] **Phase 3: Central-region rules and basic alert events.** Normalized central geometry, proximity thresholds, relevant human/vehicle labels, cooldown suppression, and bounded pipeline integration verified.
 - [ ] **Phase 4: Central speech manager and priority behavior.** Not started. Requires prior phases.
 - [ ] **Phase 5: Bounded, asynchronous Gemini scene analysis.** Not started. Requires prior phases.
 - [ ] **Phase 6: On-demand scene descriptions and voice input.** Not started. Requires prior phases.
@@ -34,6 +34,7 @@
 - **Annotated samples:** `smart_assist.detection.annotate_samples` writes bounding boxes, labels, confidences, source timestamps, inference durations, and structured detections for selected frames.
 - **Central threat rules:** `smart_assist.detection.spatial_rules` uses normalized configurable region bounds, relevant labels, minimum normalized box height, and minimum normalized box area. A detection must be relevant, centered, and large enough to pass both size thresholds.
 - **Threat events:** `ThreatEventState` suppresses repeated alerts for a continuously present class, emits again after a configurable source-time cooldown, and emits again immediately after that class disappears and returns.
+- **Threat pipeline:** `ThreatPipeline` composes YOLO detection, normalized central/proximity filtering, and source-time event cooldown. `write_alert_log` serializes structured alert events without model objects.
 
 ## Decisions and constraints
 
@@ -126,3 +127,12 @@ and created pip freeze requirements.txt file. I also created a .env file to stor
 - **Decision:** Keep event state independent from speech and tracking. The event layer emits structured messages such as `Person ahead.` but does not speak them.
 - **Status:** Phase 3 geometry, proximity filtering, and cooldown behavior verified. No speech, tracking, Gemini, currency, or live-camera functionality was added.
 - **Next step:** Integrate threat candidates and event state into bounded video processing with structured alert events.
+
+### 2026-10-12: Phase 3 integrated threat pipeline verified
+
+- **Change:** Added `ThreatPipeline` and `write_alert_log`. Each sequential frame is detected, filtered by the configured central region and minimum size thresholds, then passed through source-time cooldown state. Added tests for outside-center rejection, small centered-object rejection, cooldown suppression/re-alert, duplicate same-class detections, custom geometry, and JSON logging.
+- **Tests:** `/home/rguktrkvalley/Pictures/Vision/venv/bin/python -m pytest -q tests/test_video_source.py tests/test_sample_frames.py tests/test_yolo_detector.py tests/test_annotate_samples.py tests/test_annotate_video.py tests/test_spatial_rules.py tests/test_threat_events.py tests/test_threat_pipeline.py` passed: `22 passed in 18.99s`.
+- **Real-video verification:** Processed 10 sequential frames from `video.mp4` with CPU YOLO and a 5,000 ms source-time cooldown. The pipeline emitted exactly one `Person ahead.` event at source timestamp `0.0 ms`; repeated qualifying detections in the short window were suppressed. The structured preview was written to ignored `outputs/phase3_alerts_preview.json`.
+- **Decision:** A threat event requires all of: configured relevant label, bounding-box center inside the normalized middle region, minimum height ratio, minimum area ratio, and either a new/reappeared threat or an elapsed source-time cooldown. Processing time is not used for cooldown decisions.
+- **Status:** Phase 3 is complete and verified. No speech, tracking, Gemini, currency, or live-camera functionality was added.
+- **Next step:** Design and implement one small central speech-manager increment that can receive structured alert events. Preserve urgent-alert priority and do not add Gemini yet.
