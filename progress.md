@@ -188,4 +188,8 @@ and created pip freeze requirements.txt file. I also created a .env file to stor
 - **Reported:** `commands.md` remains an untracked user file; it was inspected and not modified.
 - **Tested:** `/home/rguktrkvalley/Pictures/Vision/venv/bin/python -m pytest -q` — 32 passed.
 - **Tested:** `git diff --check` and `py_compile` for the new speech module and tests — passed.
-- **Next step:** Integrate the speech manager into the Phase 3 preview so terminal, video, and audible local alerts run together; actual audio hardware behavior remains unverified.
+- **Verified:** Integrated optional speech submission into the sampled Phase 3 monitor. Newly emitted local threat events are submitted once with `HIGH` priority and track-aware deduplication; terminal output and optional display remain unchanged.
+- **Verified:** Added CLI `--speech`; without that flag, no speech engine is initialized.
+- **Tested:** Focused speech/preview tests — 6 passed; full regression suite — 33 passed.
+- **Tested:** Preview CLI help exposes `--speech`; `git diff --check` and `py_compile` passed.
+- **Next step:** Verify actual `pyttsx3` playback on the user's machine with a short sampled run; then continue Phase 4 with Gemini integration only after audio behavior is confirmed.

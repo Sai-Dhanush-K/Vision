@@ -7,6 +7,7 @@ import time
 import cv2
 import numpy as np
 
+from ..alerts import AlertPriority, Pyttsx3Speaker, SpeechManager, SpeechRequest
 from ..input import VideoFileSource
 from .annotate_samples import _draw_detection
 from .spatial_rules import ThreatRuleConfig, find_threats
@@ -55,6 +56,7 @@ def monitor_video(
     rules: ThreatRuleConfig | None = None,
     cooldown_ms: float = 5_000.0,
     display: bool = False,
+    speech_manager: SpeechManager | None = None,
 ) -> int:
     """Print threat status after sampled frames and return frames processed.
 
@@ -109,6 +111,19 @@ def monitor_video(
                     config=rules,
                 )
                 alerts = state.update(candidates, frame.timestamp_ms)
+                if speech_manager is not None:
+                    for alert in alerts:
+                        track_id = alert.candidate.detection.track_id
+                        speech_manager.submit(
+                            SpeechRequest(
+                                text=alert.message,
+                                priority=AlertPriority.HIGH,
+                                deduplication_key=(
+                                    f"local:{alert.label}:"
+                                    f"{track_id if track_id is not None else alert.label}"
+                                ),
+                            )
+                        )
                 processed += 1
                 elapsed_ms = (time.perf_counter() - started) * 1000
                 current = ", ".join(
@@ -160,16 +175,29 @@ def main() -> None:
         action="store_true",
         help="Process sampled frames until the video ends.",
     )
+    parser.add_argument(
+        "--speech",
+        action="store_true",
+        help="Speak newly eligible local threat alerts with pyttsx3.",
+    )
     parser.add_argument("--max-frames", type=int, default=20)
     args = parser.parse_args()
 
     started = time.perf_counter()
-    processed = monitor_video(
-        args.video_path,
-        sample_fps=args.sample_fps,
-        max_frames=None if args.full_video else args.max_frames,
-        display=args.display,
+    speech_manager = (
+        SpeechManager(Pyttsx3Speaker()) if args.speech else None
     )
+    try:
+        processed = monitor_video(
+            args.video_path,
+            sample_fps=args.sample_fps,
+            max_frames=None if args.full_video else args.max_frames,
+            display=args.display,
+            speech_manager=speech_manager,
+        )
+    finally:
+        if speech_manager is not None:
+            speech_manager.close()
     elapsed = time.perf_counter() - started
     print(f"Processed {processed} frames in {elapsed:.1f} seconds.")
 
