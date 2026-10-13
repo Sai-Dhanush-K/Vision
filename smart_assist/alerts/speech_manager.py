@@ -36,12 +36,31 @@ class SpeechRequest:
 
 
 class Pyttsx3Speaker:
-    """Local pyttsx3 adapter, created only when speech is first used."""
+    """Local pyttsx3 adapter with a slower, more natural speaking profile."""
 
-    def __init__(self) -> None:
+    def __init__(self, rate: int = 165, volume: float = 1.0) -> None:
         import pyttsx3
 
         self._engine = pyttsx3.init()
+        if rate <= 0:
+            raise ValueError("rate must be positive")
+        if not 0.0 <= volume <= 1.0:
+            raise ValueError("volume must be between 0 and 1")
+        self._engine.setProperty("rate", rate)
+        self._engine.setProperty("volume", volume)
+        self._select_preferred_voice()
+
+    def _select_preferred_voice(self) -> None:
+        voices = self._engine.getProperty("voices") or []
+        preferred = ("en-us", "en_gb", "english")
+        for voice in voices:
+            metadata = " ".join(
+                str(getattr(voice, field, ""))
+                for field in ("id", "name", "languages")
+            ).lower()
+            if any(language in metadata for language in preferred):
+                self._engine.setProperty("voice", voice.id)
+                return
 
     def speak(self, text: str) -> None:
         self._engine.say(text)
