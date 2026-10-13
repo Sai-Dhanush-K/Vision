@@ -231,3 +231,10 @@ and created pip freeze requirements.txt file. I also created a .env file to stor
 - **Tested:** Preview CLI help exposes `--voice-commands`; `git diff --check` and Python compilation passed.
 - **Unverified:** Microphone hardware, ambient-noise calibration, and speech-recognition service require user-environment verification.
 - **Next step:** User-run the voice-enabled preview and confirm command recognition before adding further voice features.
+
+## Documentation increment
+
+- **Implemented:** Added detailed `README.md` covering project scope, architecture, Ubuntu and Windows setup, `.env` configuration, PyAudio/PortAudio troubleshooting, usage, controls, limitations, and testing.
+- **Implemented:** Replaced the scratch `commands.md` with a complete command reference for setup, all current CLI tools, Mistral modes, on-demand descriptions, voice commands, preview controls, and developer checks.
+- **Not changed:** Existing modified `requirements.txt` was left untouched because it is outside this documentation-only task.
+- **Next step:** User can follow `README.md` and `commands.md`; no feature work is planned for this exchange.
