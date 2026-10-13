@@ -29,6 +29,7 @@ class PreviewControls:
 
     def __init__(self, scene_enabled: bool = False) -> None:
         self.scene_enabled = scene_enabled
+        self.voice_enabled = True
         self.request_scene = False
         self._button_rects: dict[str, tuple[int, int, int, int]] = {}
 
@@ -96,6 +97,20 @@ class PreviewControls:
                 return True
         return False
 
+    def handle_voice_command(self, action: str) -> None:
+        """Apply a normalized voice action to the same preview state."""
+
+        if action == "describe_scene" and self.voice_enabled:
+            self.request_scene = True
+        elif action == "ai_help_on" and self.voice_enabled:
+            self.scene_enabled = True
+        elif action == "ai_help_off" and self.voice_enabled:
+            self.scene_enabled = False
+        elif action == "voice_on":
+            self.voice_enabled = True
+        elif action == "voice_off":
+            self.voice_enabled = False
+
 
 def draw_preview_overlay(
     image: np.ndarray,
@@ -141,6 +156,7 @@ def monitor_video(
     scene_worker: SceneWorker | None = None,
     scene_interval_seconds: float = 5.0,
     controls: PreviewControls | None = None,
+    voice_listener=None,
 ) -> int:
     """Print threat status after sampled frames and return frames processed.
 
@@ -163,6 +179,8 @@ def monitor_video(
 
     with VideoFileSource(video_path) as source:
         controls = controls or PreviewControls(scene_worker is not None)
+        if voice_listener is not None:
+            voice_listener.start()
         if display:
             cv2.namedWindow(
                 "Smart Assistive Glasses - Threat Monitor",
@@ -264,6 +282,8 @@ def monitor_video(
 
     if display:
         cv2.destroyAllWindows()
+    if voice_listener is not None:
+        voice_listener.stop()
     return processed
 
 
@@ -299,6 +319,11 @@ def main() -> None:
         default=5.0,
         help="Source-video seconds between Mistral scene requests.",
     )
+    parser.add_argument(
+        "--voice-commands",
+        action="store_true",
+        help="Listen for voice commands using the microphone.",
+    )
     parser.add_argument("--max-frames", type=int, default=20)
     args = parser.parse_args()
 
@@ -309,6 +334,8 @@ def main() -> None:
         else None
     )
     scene_worker = None
+    controls = PreviewControls(scene_enabled=args.mistral_scene)
+    voice_listener = None
     if args.mistral_scene:
         from ..scene import MistralSceneAnalyzer, MistralSceneWorker
 
@@ -355,6 +382,20 @@ def main() -> None:
             on_result=speak_scene,
             on_error=report_scene_error,
         )
+    if args.voice_commands:
+        from ..voice import VoiceCommandListener
+
+        def handle_voice_command(command) -> None:
+            controls.handle_voice_command(command.action)
+            print(f"voice_command={command.action}", flush=True)
+
+        def report_voice_error(error: Exception) -> None:
+            print(f"voice_error={error}", flush=True)
+
+        voice_listener = VoiceCommandListener(
+            on_command=handle_voice_command,
+            on_error=report_voice_error,
+        )
     try:
         processed = monitor_video(
             args.video_path,
@@ -364,6 +405,8 @@ def main() -> None:
             speech_manager=speech_manager,
             scene_worker=scene_worker,
             scene_interval_seconds=args.scene_interval,
+            controls=controls,
+            voice_listener=voice_listener,
         )
     finally:
         if scene_worker is not None:

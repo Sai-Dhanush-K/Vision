@@ -26,3 +26,19 @@
   --display \
   --mistral-scene \
   --scene-interval 5
+
+# add microphone voice commands
+# --voice-commands starts optional microphone listening.
+# Supported examples:
+#   "Describe the scene"
+#   "What is in front of me?"
+#   "Turn on advanced AI help"
+#   "Turn off advanced AI help"
+#   "Start listening"
+#   "Stop listening"
+/home/rguktrkvalley/Pictures/Vision/venv/bin/python \
+  -m smart_assist.detection.preview_player \
+  video.mp4 \
+  --display \
+  --mistral-scene \
+  --voice-commands

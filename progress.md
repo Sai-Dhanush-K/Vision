@@ -219,3 +219,15 @@ and created pip freeze requirements.txt file. I also created a .env file to stor
 - **Verified:** Added a detailed request flag through the analyzer and bounded worker. The on-demand preview button sends the detailed mode, while scheduled five-second scans remain short.
 - **Verified:** Detailed results speak only the full scene summary, avoiding the short observation alert format used by periodic assistance.
 - **Next step:** Run focused and full tests for the detailed-summary behavior. Voice commands remain a separate next increment.
+
+## Voice command increment
+
+- **Verified:** Committed the prior Mistral/detailed-summary work as `0b28636`.
+- **Implemented:** Added normalized voice commands for detailed scene requests, advanced AI help on/off, and voice-listening mode on/off.
+- **Implemented:** Added an optional microphone listener using `SpeechRecognition`; it runs in a daemon worker and reports microphone/API errors without stopping local processing.
+- **Implemented:** Voice actions update the same `PreviewControls` state used by mouse/keyboard controls.
+- **Implemented:** Documented voice command examples and `--voice-commands` in `commands.md`.
+- **Tested:** Voice/parser/scene focused tests — 15 passed; full regression suite — 45 passed.
+- **Tested:** Preview CLI help exposes `--voice-commands`; `git diff --check` and Python compilation passed.
+- **Unverified:** Microphone hardware, ambient-noise calibration, and speech-recognition service require user-environment verification.
+- **Next step:** User-run the voice-enabled preview and confirm command recognition before adding further voice features.
