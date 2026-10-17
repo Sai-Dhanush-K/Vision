@@ -15,6 +15,7 @@ from .spatial_rules import ThreatRuleConfig, find_threats
 from .threat_events import ThreatEventState
 from .tracker import IoUTracker
 from .yolo_detector import YoloDetector
+from .yolo_world_detector import YoloWorldDetector
 
 
 class SceneWorker(Protocol):
@@ -292,6 +293,18 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("video_path", type=Path)
+    parser.add_argument(
+        "--detector",
+        choices=("yolo", "yolo-world"),
+        default="yolo-world",
+        help="Local detector; yolo-world supports zero-shot labels.",
+    )
+    parser.add_argument(
+        "--world-label",
+        action="append",
+        dest="world_labels",
+        help="YOLO-World label; repeat to add custom zero-shot labels.",
+    )
     parser.add_argument("--sample-fps", type=float, default=2.0)
     parser.add_argument(
         "--display",
@@ -328,6 +341,13 @@ def main() -> None:
     args = parser.parse_args()
 
     started = time.perf_counter()
+    detector = (
+        YoloWorldDetector(labels=args.world_labels or ())
+        if args.detector == "yolo-world" and args.world_labels
+        else YoloWorldDetector()
+        if args.detector == "yolo-world"
+        else YoloDetector()
+    )
     speech_manager = (
         SpeechManager(Pyttsx3Speaker())
         if args.speech or args.mistral_scene
@@ -407,6 +427,7 @@ def main() -> None:
             scene_interval_seconds=args.scene_interval,
             controls=controls,
             voice_listener=voice_listener,
+            detector=detector,
         )
     finally:
         if scene_worker is not None:

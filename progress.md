@@ -238,3 +238,11 @@ and created pip freeze requirements.txt file. I also created a .env file to stor
 - **Implemented:** Replaced the scratch `commands.md` with a complete command reference for setup, all current CLI tools, Mistral modes, on-demand descriptions, voice commands, preview controls, and developer checks.
 - **Not changed:** Existing modified `requirements.txt` was left untouched because it is outside this documentation-only task.
 - **Next step:** User can follow `README.md` and `commands.md`; no feature work is planned for this exchange.
+
+## YOLO-World branch increment
+
+- **Implemented:** Added `YoloWorldDetector` with configurable zero-shot labels and the same `Detection` record used by the existing pipeline.
+- **Implemented:** The preview defaults to YOLO-World on this branch, with `--detector yolo` retained as an explicit fallback.
+- **Implemented:** Added default prompts for people, vehicles, trees, poles, traffic lights, stairs, curbs, and construction barriers. Repeated `--world-label` options replace the default prompt set.
+- **Verified by design:** Existing spatial geometry, tracker, cooldown, obstacle categorization, terminal output, preview, and speech integration are reused unchanged.
+- **Next step:** Run focused YOLO-World conversion tests, then a real model download/inference check on a video frame before committing.
