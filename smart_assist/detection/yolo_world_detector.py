@@ -22,6 +22,9 @@ DEFAULT_WORLD_LABELS = (
     "stairs",
     "curb",
     "construction barrier",
+    "tree trunk",
+    "electric pole",
+    "streetlight pole",
 )
 
 
