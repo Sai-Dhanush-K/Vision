@@ -3,7 +3,8 @@
 A CPU-friendly Python prototype for a walking point-of-view video. The project
 combines:
 
-- Local YOLO object detection for immediate person, vehicle, and obstacle alerts.
+- Local YOLO-World object detection for immediate person, vehicle, obstacle,
+  tree, pole, and other configured zero-shot-label alerts.
 - Configurable central/lower-frame geometry so distant or side objects do not
   automatically become threats.
 - Lightweight tracking and cooldown state so the same tracked object is not
@@ -36,7 +37,8 @@ smart_assist/
   alerts/
     speech_manager.py       Priority speech queue and pyttsx3 adapter
   detection/
-    yolo_detector.py        CPU YOLO inference
+    yolo_detector.py        CPU YOLOv8 inference
+    yolo_world_detector.py  CPU YOLO-World zero-shot inference
     spatial_rules.py        Central/lower geometry and classifications
     tracker.py              Lightweight IoU tracking
     threat_events.py        Per-track cooldown and alert events
@@ -55,6 +57,8 @@ commands.md                Command reference
 
 Generated media and model weights are ignored by Git. The YOLO weights file
 `yolov8n.pt` is downloaded locally when needed.
+On this branch, the preview defaults to `yolov8s-world.pt`; this weight file is
+also downloaded locally when first used.
 
 ## Requirements
 
@@ -186,6 +190,21 @@ Terminal-only local detection, 20 sampled frames:
 python -m smart_assist.detection.preview_player \
   video.mp4 --sample-fps 2 --max-frames 20
 ```
+
+The preview defaults to YOLO-World on the `test-yolo-world` branch. Use
+`--detector yolo` to select the original YOLOv8 detector. YOLO-World labels
+are configurable with repeated `--world-label` options, for example:
+
+```bash
+python -m smart_assist.detection.preview_player \
+  video.mp4 --detector yolo-world \
+  --world-label person --world-label car \
+  --world-label tree --world-label pole
+```
+
+YOLO-World is zero-shot, but its detections are still fallible. A label such as
+`tree` or `pole` can be passed into the same central/lower geometry and
+cooldown pipeline; it is not a guarantee that every tree or pole is detected.
 
 Local detection with terminal output, video preview, and speech:
 
@@ -342,4 +361,3 @@ print the key while debugging.
 - Do not commit `.env`, `video.mp4`, model weights, generated outputs, or
   Python cache files.
 - Make focused changes and run the relevant tests before committing.
-

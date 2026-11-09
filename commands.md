@@ -104,6 +104,34 @@ python -m smart_assist.detection.preview_player \
   video.mp4 --sample-fps 2 --max-frames 20
 ```
 
+The preview uses YOLO-World by default on this branch. YOLO-World supports
+zero-shot labels such as trees and poles while reusing the existing central
+geometry, tracking, cooldown, speech, and obstacle alert pipeline.
+
+To explicitly use the original YOLOv8 detector:
+
+```bash
+python -m smart_assist.detection.preview_player \
+  video.mp4 --detector yolo --sample-fps 2 --max-frames 20
+```
+
+Add or replace the YOLO-World prompt labels by repeating `--world-label`:
+
+```bash
+python -m smart_assist.detection.preview_player \
+  video.mp4 \
+  --detector yolo-world \
+  --world-label person \
+  --world-label car \
+  --world-label tree \
+  --world-label pole \
+  --max-frames 20
+```
+
+When custom labels are supplied, they replace the default YOLO-World label
+set. Labels are zero-shot text prompts, not guaranteed classes; verify their
+quality on the target video.
+
 Parameters:
 
 - `video.mp4`: input video.
@@ -112,6 +140,8 @@ Parameters:
 - `--full-video`: ignore the frame limit and process until the source ends.
 - `--display`: show the resized OpenCV preview.
 - `--speech`: speak new local threat alerts with `pyttsx3`.
+- `--detector`: choose `yolo-world` (default on this branch) or `yolo`.
+- `--world-label`: add a custom YOLO-World prompt; repeat this option.
 
 Run local detection with display and speech:
 
